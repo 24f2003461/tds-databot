@@ -241,6 +241,35 @@ def agent_reply(chat_id: int, user_text: str) -> str:
     if "answer" not in parsed:
         parsed = {"answer": parsed}
 
+    # --- Format-repair pass: force strict compliance with the requested shape.
+    # Free models sometimes ignore "output ONLY JSON" and stuff an explanation
+    # into the answer field. This second call strips that down. ---
+    try:
+        repair_prompt = (
+            "QUESTION (verbatim - includes the exact JSON shape required):\n"
+            f"{user_text}\n\n"
+            "DRAFT ANSWER (may be verbose or wrongly shaped):\n"
+            f"{json.dumps(parsed)}\n\n"
+            "Rewrite this as ONLY the final JSON object the question asks for. "
+            "Extract just the essential value (a name, number, short string, or "
+            "small object/array) that was requested - discard any explanation, "
+            "reasoning, citations, or markdown. Match the exact keys, nesting, "
+            "and value types shown in the question's JSON shape. Always include "
+            '"log_url": "PLACEHOLDER". Output ONLY the JSON object, nothing else, '
+            "no markdown fences, no commentary."
+        )
+        repair_resp = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": repair_prompt}],
+        )
+        repaired_text = repair_resp.choices[0].message.content or ""
+        repaired = extract_json(repaired_text)
+        if repaired is not None and "answer" in repaired:
+            parsed = repaired
+            log_event({"chat_id": chat_id, "repair_pass": repaired_text})
+    except Exception as e:
+        log_event({"chat_id": chat_id, "repair_error": str(e)})
+
     parsed["log_url"] = f"{BASE_URL}/run.jsonl"
 
     reply_str = json.dumps(parsed)

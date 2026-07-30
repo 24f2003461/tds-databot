@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+requests
+openai>=1.30.0
+pandas
+numpy
+beautifulsoup4
+lxml
+openpyxl

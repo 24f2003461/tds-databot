@@ -19,17 +19,13 @@ from openai import OpenAI
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 LLM_API_KEY = os.environ["LLM_API_KEY"]
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
-MODEL = os.environ.get("MODEL", "openrouter/free")
-LLM_API_BASE = os.environ.get("LLM_API_BASE", "https://openrouter.ai/api/v1")
+MODEL = os.environ.get("MODEL", "llama-3.3-70b-versatile")
+LLM_API_BASE = os.environ.get("LLM_API_BASE", "https://api.groq.com/openai/v1")
 
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 client = OpenAI(
     api_key=LLM_API_KEY,
     base_url=LLM_API_BASE,
-    default_headers={
-        "HTTP-Referer": BASE_URL,
-        "X-Title": "tds-databot",
-    },
 )
 
 LOG_FILE = "run.jsonl"
